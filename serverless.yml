@@ -1,0 +1,24 @@
+service: lambda-sns
+plugins:
+  - serverless-pseudo-parameters
+provider:
+  name: aws
+  runtime: nodejs12.x
+  stage: dev
+  memorySize: 128
+  environment:
+    accountId: '#{AWS::AccountId}'
+    region: '#{AWS::Region}'
+  iamRoleStatements:
+    - Effect: "Allow"
+      Resource: "*"
+      Action:
+        - "sns:*"
+functions:
+  SNSResponseSendMessage:
+    handler: handler.SNSResponseSendMessage
+    events:
+      - http:
+          path: SNSResponseSendMessage
+          method: post
+          cors: true
