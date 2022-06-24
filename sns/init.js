@@ -1,5 +1,5 @@
 const aws = require('aws-sdk')
-const sns = new aws.SNS()
+const sns = new aws.SNS().createTopic({Name: "Topic-response"}).promise();
 
 function generateResponse (code, payload) {
   console.log(payload)
@@ -21,7 +21,12 @@ async function publishSnsTopic (region, accountId, data) {
     Message: JSON.stringify(data),
     TopicArn: `arn:aws:sns:${region}:${accountId}:Topic-response`
   }
-  return sns.publish(params).promise()
+  sns.then(data => {
+    console.log("Topic ARN is " + data.TopicArn);
+    return sns.publish(params).promise();
+  }).catch(function(err) {
+    console.error(err, err.stack);
+  });
 }
 
 const SNSResponseSendMessage  = async (event, context) => {
@@ -29,11 +34,11 @@ const SNSResponseSendMessage  = async (event, context) => {
   try {
     const region = context.invokedFunctionArn.split(":")[3];
     const accountId = context.invokedFunctionArn.split(":")[4];
-    const metadata = await publishSnsTopic(region, accountId ,data)
     console.log(`arn:aws:sns:${region}:${accountId}:Topic-response`)
+    const metadata = await publishSnsTopic(region, accountId ,data)
     return generateResponse(200, {
       message: 'Successfully',
-      data: metadata,
+      data: data,
       TopicArn: `arn:aws:sns:${region}:${accountId}:Topic-response`
     })
   } catch (err) {
